@@ -5,9 +5,14 @@ import requests
 import ftplib
 import sys
 
-if sys.argv[1] == '--ftp':
-    ps3_ip = input('Enter PS3 FTP ip address: \n')
-    upload = True
+try:
+    if sys.argv[1] == '--ftp':
+        ps3_ip = input('Enter PS3 FTP ip address: \n')
+        upload = True
+except IndexError:
+    print('''You did not use the ftp flag, script will load files to your local directory only.
+If you want the script to automatically upload your files to the ps3 use the following format:
+$: python file_converter --ftp''')
 base_path = os.path.dirname(os.path.abspath(__file__))
 username = 'anonymous'
 password = f'{username}@'
@@ -96,7 +101,5 @@ for pkgi_file, tsv_file in downloaded_tsv_files.items():
         except:
             print('An error occurred while connecting the ps3 via FTP, please load the databases via USB stick.')
     else:
-        print('''You did not use the ftp flag, script will load files to your local directory only.
-If you want the script to automatically upload your files to the ps3 use the following format:
-$: python file_converter --ftp''')
         continue
+
