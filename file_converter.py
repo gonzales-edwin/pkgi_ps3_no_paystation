@@ -5,6 +5,7 @@ import requests
 import ftplib
 import sys
 
+upload = False
 try:
     if sys.argv[1] == '--ftp':
         ps3_ip = input('Enter PS3 FTP ip address: \n')
