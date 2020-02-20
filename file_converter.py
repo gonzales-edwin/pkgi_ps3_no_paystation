@@ -5,15 +5,18 @@ import requests
 import ftplib
 import sys
 
+if sys.argv[1] == '--ftp':
+    ps3_ip = input('Enter PS3 FTP ip address: \n')
+    upload = True
 base_path = os.path.dirname(os.path.abspath(__file__))
 username = 'anonymous'
-pkgi_ps3_remote_dir = '/dev_hdd0/game/NP00PKGI3/USRDIR'
+password = f'{username}@'
+pkgi_ps3_remote_dir = '/dev_hdd0/game/NP00PKGI3/USRDIR/'
 
 
 def join_path(file_name): return os.path.join(base_path, file_name)
 
 
-output_file = os.path.join(base_path, 'pkgi.txt')
 remote_files = {
     'PS3_GAMES.tsv': 'https://nopaystation.com/tsv/PS3_GAMES.tsv',
     'PS3_DLCS.tsv': 'https://nopaystation.com/tsv/PS3_DLCS.tsv',
@@ -28,19 +31,21 @@ downloaded_tsv_files = {
 }
 
 
-pkgi_formated_db = []
+pkgi_formatted_db = []
 
 
 def get_updated_games():
     for name, url in remote_files.items():
         r = requests.get(url)
         data = r.text.replace('\n', '')
+        print(f'{name} successfully downloaded')
         with open(name, 'w', encoding='utf8') as f:
             f.write(data)
+            print(f'{name} successfully saved to disk.')
 
 
-def format_downloaded_tsv(tsv_file):
-    with open(tsv_file, 'r', encoding='utf8') as file:
+def format_downloaded_tsv(tsv_file_to_format):
+    with open(tsv_file_to_format, 'r', encoding='utf8') as file:
         lines = csv.reader(file)
         for num, line in enumerate(lines):
             new_line = line[0].split('\t')
@@ -54,8 +59,8 @@ def format_downloaded_tsv(tsv_file):
                 size = new_line[8]
                 checksum = ''
                 line = f'{content_id},{flags},{name},{description},{rap},{url},{size},{checksum}'
-                pkgi_formated_db.append(line)
-                print(line)
+                pkgi_formatted_db.append(line)
+                # print(line)
             except IndexError:
                 print('line cannot be read')
                 continue
@@ -63,33 +68,35 @@ def format_downloaded_tsv(tsv_file):
 
 def write_to_file(db_file):
     with open(db_file, 'w') as file:
-        for line in pkgi_formated_db:
+        for line in pkgi_formatted_db:
             file.write(f'{line}\n')
+        print(f'{db_file} successfully formatted as PKGi DB format.')
 
 
 def upload_pkgi_db(file_name):
-    ftp = ftplib.FTP(str(ps3_ip))
-    ftp.login(username)
+    ftp = ftplib.FTP(ps3_ip, username, password)
+    print(f'Successfully logged in to PS3, current directory is: {ftp.getwelcome()}')
     ftp.cwd(pkgi_ps3_remote_dir)
+    print(f'Successfully changed to PKGi game directory: {ftp.pwd()}')
     ftp_upload = open(file_name, 'rb')
-    ftp.storlines(f'STORE {file_name}', ftp_upload)
-    ftp.close()
+    ftp.storlines('STOR %s' % file_name, ftp_upload)
+    ftp.quit()
+    ftp_upload.close()
+    print(f'Successfully uploaded {file_name} to PS3')
 
 
 get_updated_games()
 for pkgi_file, tsv_file in downloaded_tsv_files.items():
     format_downloaded_tsv(tsv_file)
     write_to_file(pkgi_file)
-    pkgi_formated_db.clear()
-    try:
-        if sys.argv[1] == '--ftp':
-            try:
-                ps3_ip = input('Enter PS3 FTP ip address: \n')
-                upload_pkgi_db(pkgi_file)
-            except:
-                print('An error occurred while connecting the ps3 via FTP, please load the databases via USB stick.')
-    except IndexError:
+    pkgi_formatted_db.clear()
+    if upload:
+        try:
+            upload_pkgi_db(pkgi_file)
+        except:
+            print('An error occurred while connecting the ps3 via FTP, please load the databases via USB stick.')
+    else:
         print('''You did not use the ftp flag, script will load files to your local directory only.
 If you want the script to automatically upload your files to the ps3 use the following format:
-python file_converter --ftp''')
+$: python file_converter --ftp''')
         continue
