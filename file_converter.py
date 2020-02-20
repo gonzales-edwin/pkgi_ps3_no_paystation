@@ -35,8 +35,6 @@ downloaded_tsv_files = {
     'pkgi_themes.txt': join_path('PS3_THEMES.tsv'),
     'pkgi_avatars.txt': join_path('PS3_AVATARS.tsv')
 }
-
-
 pkgi_formatted_db = []
 
 
@@ -68,7 +66,6 @@ def format_downloaded_tsv(tsv_file_to_format):
                 pkgi_formatted_db.append(line)
                 # print(line)
             except IndexError:
-                print('line cannot be read')
                 continue
 
 
@@ -103,4 +100,3 @@ for pkgi_file, tsv_file in downloaded_tsv_files.items():
             print('An error occurred while connecting the ps3 via FTP, please load the databases via USB stick.')
     else:
         continue
-
